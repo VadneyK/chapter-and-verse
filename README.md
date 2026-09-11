@@ -19,15 +19,21 @@ interesting part is what happens after it produces something.
 
 ```bash
 npm install
-npm run build      # fetches both data files, builds out/index.json
-npm run verify     # checks the adversarial fixture
+npm run build-index  # builds out/index.json from the files in sources/
+npm run verify       # checks the adversarial fixture
 npm run report     # renders out/report.html
 open out/report.html
 ```
 
-`npm run build` is the only step that needs a network. After it, nothing else
-does, including the generator, which runs in replay mode by default. That is
-deliberate: a demo runs on conference wifi.
+Nothing there needs a network. Both data files are committed, because the
+whole point of the license work was that they can be redistributed, and a
+build that reaches out to a moving `master` branch and a zip the source
+regenerates on a schedule is a build that gives a different answer next month.
+`npm run fetch` refreshes them deliberately, and prints a SHA-256 for each so
+a change is visible rather than silent.
+
+The generator needs no network either. It runs in replay mode by default,
+because a demo runs on conference wifi.
 
 ```bash
 npm run selftest                                  # the loop, with a scripted model, no API key
@@ -37,22 +43,24 @@ npm run generate -- "understand Romans in 6 weeks"
 ## Why the index is built from scratch
 
 An earlier prototype of this checked plans against a structured index that
-came out of somebody else's application. Two things were wrong with that.
+belonged to a friend's scripture app, used with permission. That still left
+two problems.
 
-The first was licensing. That repository carried no LICENSE file, which under
-GitHub's terms means all rights reserved: forking it is permitted, publishing
-a derivative of it is not. A verifier whose entire authority rests on the data
-it checks against cannot ship on data it has no right to ship.
+The first is that data shared with you is not data you can redistribute. That
+index was built for one app, not to be handed onward, and every time somebody
+wanted to run the verifier the answer would have been "ask him first". A tool
+whose entire authority rests on the data it checks against should be able to
+ship that data without anyone's permission being the load-bearing part.
 
-The second was that the data could not answer the question. It carried chapter
+The second is that the data could not answer the question. It carried chapter
 counts and no verse counts, so `Romans 8:999` and `Romans 8:28` were
 indistinguishable to it. The honest thing to report was "cannot be checked",
-and an adversarial audit of that prototype showed six invented claims passing
-out of six.
+and an adversarial audit of that prototype had six invented claims passing out
+of six.
 
-So the index is rebuilt here from two sources that are free to redistribute,
-and the rebuild bought three checks the old one could not make at all. The
-licensing problem and the capability problem had the same fix.
+So the index is rebuilt here from two sources anyone can redistribute, and the
+rebuild bought three checks the old one could not make at all. The
+redistribution problem and the capability problem had the same fix.
 
 ## What it checks
 
