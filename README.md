@@ -252,6 +252,20 @@ The CLIs are separate files from the libraries they wrap. Under vite-node,
 `process.argv[1]` is the vite-node binary, so the usual "was I invoked
 directly" guard never fires and every import of the library re-runs the demo.
 
+## For judges and reviewers
+
+- [docs/gloo-agent-build-doc.md](docs/gloo-agent-build-doc.md) is the Agent Build
+  Document: architecture, both prompt versions verbatim with what was wrong with the
+  earlier one, the evaluation set, the guardrails, and the known gaps.
+- [docs/nebius.md](docs/nebius.md) covers the Nebius x NVIDIA entry: how Nemotron and
+  Token Factory are used, and what is not yet true.
+- A live report, built by the same commands this README gives, is published at
+  https://vadneyk.github.io/chapter-and-verse/ on every push.
+
+Both documents say plainly which sections cannot be written yet and why, rather than
+filling them with plausible text. That is the same standard the verifier holds a study
+plan to.
+
 ## License
 
 MIT, see [LICENSE](LICENSE). The data terms are separate and travel with the
