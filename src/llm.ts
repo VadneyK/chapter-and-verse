@@ -31,7 +31,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_DIR = path.join(HERE, '..', 'fixtures', 'llm');
 
 /** Claude Opus 5. Thinking is on by default on this model; we do not disable it. */
-export const MODEL = 'claude-opus-5';
+export const ANTHROPIC_MODEL = 'claude-opus-5';
 
 export interface LlmRequest {
   /** Operator instructions. Stable across a run so it caches well. */
@@ -55,6 +55,17 @@ export interface LlmResponse {
 
 export interface Llm {
   readonly mode: 'live' | 'replay';
+  /**
+   * The model identifier this client speaks to.
+   *
+   * On the interface rather than a module constant because the model is no
+   * longer a property of the project. It is a property of which client is
+   * wired up, it changes the answer, and it has to reach the trace and the
+   * report header so a reader can see which model produced the plan the
+   * verifier then tore apart. It is also part of the replay key: a recording
+   * made against one model must not be served for a request to another.
+   */
+  readonly model: string;
   complete(req: LlmRequest): Promise<LlmResponse>;
 }
 
@@ -64,9 +75,9 @@ export interface Llm {
  * prompt gives a different key and a replay miss, which is the honest
  * behaviour: a changed prompt has no recorded answer.
  */
-export function requestKey(req: LlmRequest): string {
+export function requestKey(model: string, req: LlmRequest): string {
   const canonical = JSON.stringify({
-    model: MODEL,
+    model,
     system: req.system,
     messages: req.messages,
     schema: req.schema,
@@ -81,12 +92,18 @@ function fixturePath(key: string): string {
 export class ReplayLlm implements Llm {
   readonly mode = 'replay' as const;
 
+  /**
+   * Which model's recordings to serve. It has to match the model that made
+   * them, because the model is part of the key.
+   */
+  constructor(readonly model: string) {}
+
   async complete(req: LlmRequest): Promise<LlmResponse> {
-    const key = requestKey(req);
+    const key = requestKey(this.model, req);
     const file = fixturePath(key);
     if (!fs.existsSync(file)) {
       throw new Error(
-        `No recorded response for ${req.label} (key ${key}).\n` +
+        `No recorded response for ${req.label} from ${this.model} (key ${key}).\n` +
           `Replay mode only serves prompts that have been recorded. Either:\n` +
           `  - run once with credentials and LLM_MODE=live to record it, or\n` +
           `  - revert the prompt change that invalidated the recording.\n` +
@@ -100,6 +117,7 @@ export class ReplayLlm implements Llm {
 
 export class AnthropicLlm implements Llm {
   readonly mode = 'live' as const;
+  readonly model = ANTHROPIC_MODEL;
 
   async complete(req: LlmRequest): Promise<LlmResponse> {
     // Resolved through a variable so the specifier is a runtime value. A
@@ -125,7 +143,7 @@ export class AnthropicLlm implements Llm {
     // Streaming because a full study plan can be long and a non-streaming
     // request with a large max_tokens can hit the SDK's HTTP timeout.
     const stream = client.messages.stream({
-      model: MODEL,
+      model: this.model,
       max_tokens: 32000,
       system: [{ type: 'text', text: req.system, cache_control: { type: 'ephemeral' } }],
       messages: req.messages,
@@ -158,14 +176,14 @@ export class AnthropicLlm implements Llm {
 
     // Record it, so the next run needs no key.
     fs.mkdirSync(FIXTURE_DIR, { recursive: true });
-    const key = requestKey(req);
+    const key = requestKey(this.model, req);
     fs.writeFileSync(
       fixturePath(key),
       `${JSON.stringify(
         {
           key,
           label: req.label,
-          model: MODEL,
+          model: this.model,
           recordedAt: new Date().toISOString(),
           usage: message.usage,
           output,
@@ -192,7 +210,7 @@ export class AnthropicLlm implements Llm {
 export function selectLlm(): Llm {
   const mode = process.env.LLM_MODE;
   if (mode === 'live') return new AnthropicLlm();
-  if (mode === 'replay') return new ReplayLlm();
+  if (mode === 'replay') return new ReplayLlm(ANTHROPIC_MODEL);
   const hasCreds = Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
-  return hasCreds ? new AnthropicLlm() : new ReplayLlm();
+  return hasCreds ? new AnthropicLlm() : new ReplayLlm(ANTHROPIC_MODEL);
 }

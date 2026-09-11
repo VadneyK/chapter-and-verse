@@ -144,6 +144,7 @@ const SCRIPT: Record<string, unknown>[] = [
 
 class ScriptedLlm implements Llm {
   readonly mode = 'replay' as const;
+  readonly model = 'scripted-stand-in';
   private calls = 0;
   readonly seen: string[] = [];
   readonly prompts: string[] = [];

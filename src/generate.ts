@@ -40,7 +40,7 @@ import { fileURLToPath } from 'node:url';
 
 import { buildEvidence, renderEvidence } from './evidence';
 import type { BuiltIndex } from './index-types';
-import { MODEL, selectLlm, type Llm } from './llm';
+import { selectLlm, type Llm } from './llm';
 import type { PlanItem, StudyPlan } from './schema';
 import { verifyPlan, type ItemReport, type VerifyReport } from './verify';
 
@@ -195,7 +195,7 @@ Write the study plan. Aim for roughly ${weeks * 4} items.`,
     const trial: StudyPlan = {
       goal,
       weeks,
-      generatedBy: `${MODEL} (${llm.mode})`,
+      generatedBy: `${llm.model} (${llm.mode})`,
       items: returned,
     };
     const report = verifyPlan(index, trial);
@@ -239,7 +239,7 @@ Write the study plan. Aim for roughly ${weeks * 4} items.`,
   const plan: StudyPlan = {
     goal,
     weeks,
-    generatedBy: `${MODEL} (${llm.mode}), verified against out/index.json`,
+    generatedBy: `${llm.model} (${llm.mode}), verified against out/index.json`,
     items: accepted,
   };
 
@@ -248,7 +248,7 @@ Write the study plan. Aim for roughly ${weeks * 4} items.`,
     goal,
     book: pack.book.name,
     weeks,
-    model: MODEL,
+    model: llm.model,
     mode: llm.mode,
     generatedAt: new Date().toISOString(),
     rounds,
