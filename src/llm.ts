@@ -201,16 +201,208 @@ export class AnthropicLlm implements Llm {
   }
 }
 
+
 /**
- * Replay unless told otherwise, and live only when credentials actually
- * exist. Defaulting the other way would make the demo depend on the room's
- * network and on a key being present, which is exactly the failure you do
- * not want on stage.
+ * Nebius Token Factory, which serves NVIDIA's open-weight models behind an
+ * OpenAI-compatible API.
+ *
+ * Written with raw fetch rather than the `openai` package. It is one POST,
+ * the replay path is meant to need no SDK at all, and adding a second
+ * dynamic-import dance to save fifteen lines is not a trade worth making.
+ *
+ * Nothing in this class has been run against a live endpoint. The base URL
+ * was confirmed to exist (it answers 401 without a token) and the model id
+ * is the one Nebius publishes in its own Nemotron sample, but the response
+ * handling below is written from the OpenAI-compatible contract and the
+ * behaviour of vLLM-style reasoning servers, not from a response anyone has
+ * seen. The two places that are most likely to need a correction on the
+ * first real run are marked.
+ */
+export const NEBIUS_MODEL = 'nvidia/nemotron-3-super-120b-a12b';
+
+/**
+ * Nebius publishes two spellings of this host: the plain one, and a
+ * region-qualified `api.tokenfactory.us-central1.nebius.com`. The plain one
+ * is used here because it is the one that answered. Override with
+ * NEBIUS_BASE_URL if an account is pinned to a region.
+ */
+export const NEBIUS_BASE_URL = 'https://api.tokenfactory.nebius.com/v1';
+
+/**
+ * Strips a reasoning preamble out of a completion.
+ *
+ * Reasoning models on OpenAI-compatible servers put their thinking in one of
+ * two places depending on how the server is configured: a separate
+ * `reasoning_content` field, leaving `content` clean, or an inline
+ * `<think>...</think>` block at the front of `content`. Which one Nebius does
+ * cannot be settled from the documentation, so both are handled. If a first
+ * live run shows only one is real, delete the other rather than leaving a
+ * branch nothing exercises.
+ */
+export function stripReasoning(text: string): string {
+  return text.replace(/^\s*<think>[\s\S]*?<\/think>\s*/, '').trim();
+}
+
+export class NebiusLlm implements Llm {
+  readonly mode = 'live' as const;
+  readonly model: string;
+  readonly baseUrl: string;
+
+  constructor(model = process.env.NEBIUS_MODEL || NEBIUS_MODEL, baseUrl?: string) {
+    this.model = model;
+    this.baseUrl = (baseUrl || process.env.NEBIUS_BASE_URL || NEBIUS_BASE_URL).replace(/\/+$/, '');
+  }
+
+  async complete(req: LlmRequest): Promise<LlmResponse> {
+    const key = process.env.NEBIUS_API_KEY;
+    if (!key) {
+      throw new Error(
+        'NEBIUS_API_KEY is not set. Get a key from the Nebius Token Factory console, ' +
+          'export it, and run again. Or stay in replay mode, which needs no key.',
+      );
+    }
+
+    // A long plan on a 120B reasoning model is not a fast request. Ten
+    // minutes, and an abort rather than a socket that hangs until the
+    // process is killed.
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), 10 * 60 * 1000);
+
+    let res: Response;
+    try {
+      res = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        signal: abort.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model: this.model,
+          max_tokens: 16000,
+          messages: [{ role: 'system', content: req.system }, ...req.messages],
+          // No `strict: true`. Strict schema mode requires every declared
+          // property to be present, and the system prompt tells the model to
+          // leave a field out rather than guess at it. Turning strict on
+          // would make that instruction impossible to follow and quietly
+          // undo the design: fewer claims that are all true beats a rich
+          // item with one invented detail.
+          response_format: {
+            type: 'json_schema',
+            json_schema: { name: 'study_plan', schema: req.schema },
+          },
+        }),
+      });
+    } catch (err) {
+      clearTimeout(timer);
+      if (abort.signal.aborted) throw new Error(`${this.model} did not answer within 10 minutes.`);
+      throw err;
+    }
+    clearTimeout(timer);
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(
+        `Nebius returned ${res.status} ${res.statusText}. ${body.slice(0, 300)}`.trim(),
+      );
+    }
+
+    const payload: any = await res.json();
+    const choice = payload?.choices?.[0];
+    if (!choice) {
+      throw new Error(`Nebius returned no choices. First 200 chars: ${JSON.stringify(payload).slice(0, 200)}`);
+    }
+    if (choice.finish_reason === 'length') {
+      throw new Error(
+        `${this.model} hit the 16000 token output cap before finishing the plan. ` +
+          'Ask for fewer items, or raise max_tokens.',
+      );
+    }
+
+    const text = stripReasoning(String(choice.message?.content ?? ''));
+    let output: unknown;
+    try {
+      output = JSON.parse(text);
+    } catch {
+      throw new Error(`Model returned text that is not JSON, first 200 chars: ${text.slice(0, 200)}`);
+    }
+
+    // Record it, so the next run needs no key. Same fixture shape as the
+    // Anthropic client, with the provider written down: two clients can put
+    // recordings in the same directory without either one being able to
+    // serve the other's, because the model is in the key.
+    fs.mkdirSync(FIXTURE_DIR, { recursive: true });
+    const fixtureKey = requestKey(this.model, req);
+    fs.writeFileSync(
+      fixturePath(fixtureKey),
+      `${JSON.stringify(
+        {
+          key: fixtureKey,
+          label: req.label,
+          provider: 'nebius',
+          model: this.model,
+          recordedAt: new Date().toISOString(),
+          usage: payload.usage,
+          output,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+
+    return {
+      output,
+      source: 'live',
+      usage: payload.usage
+        ? {
+            input_tokens: payload.usage.prompt_tokens ?? 0,
+            output_tokens: payload.usage.completion_tokens ?? 0,
+          }
+        : undefined,
+    };
+  }
+}
+
+/**
+ * Picks a client.
+ *
+ * Two axes, and they are independent. LLM_PROVIDER says which model the run
+ * is about; LLM_MODE says whether to actually call it.
+ *
+ *   LLM_PROVIDER=nebius     (default) NVIDIA Nemotron on Nebius Token Factory
+ *   LLM_PROVIDER=anthropic  Claude
+ *
+ *   LLM_MODE=replay         (default) serve recordings, no key, no network
+ *   LLM_MODE=live           call the provider, and record what comes back
+ *
+ * Replay is the default because a demo runs on conference wifi and should
+ * not depend on the room's network or on a key being present. With no
+ * environment set at all, a live call happens only when that provider's
+ * credentials are actually there.
+ *
+ * Nebius is the default provider rather than Anthropic because replay needs
+ * a model string to compute its keys, and the recordings this repo will
+ * carry are Nemotron's. Defaulting to Claude would make a bare
+ * `npm run generate` miss every recording on disk and fail with a replay
+ * miss, which is an honest error about a situation nobody is in.
  */
 export function selectLlm(): Llm {
+  const provider = (process.env.LLM_PROVIDER || 'nebius').toLowerCase();
+  if (provider !== 'nebius' && provider !== 'anthropic') {
+    throw new Error(`LLM_PROVIDER must be "nebius" or "anthropic", not "${provider}".`);
+  }
+
+  const live = () => (provider === 'nebius' ? new NebiusLlm() : new AnthropicLlm());
+  const replayModel = () =>
+    provider === 'nebius' ? process.env.NEBIUS_MODEL || NEBIUS_MODEL : ANTHROPIC_MODEL;
+
   const mode = process.env.LLM_MODE;
-  if (mode === 'live') return new AnthropicLlm();
-  if (mode === 'replay') return new ReplayLlm(ANTHROPIC_MODEL);
-  const hasCreds = Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
-  return hasCreds ? new AnthropicLlm() : new ReplayLlm(ANTHROPIC_MODEL);
+  if (mode === 'live') return live();
+  if (mode === 'replay') return new ReplayLlm(replayModel());
+
+  const hasCreds =
+    provider === 'nebius'
+      ? Boolean(process.env.NEBIUS_API_KEY)
+      : Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
+  return hasCreds ? live() : new ReplayLlm(replayModel());
 }

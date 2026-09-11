@@ -2,6 +2,13 @@
  * Proves the generate-verify-repair loop does what this project claims, with a
  * scripted stand-in for the model so it needs no API key and no network.
  *
+ * A second section at the end covers the model client on every path that
+ * works without credentials: which client a bare environment selects, what a
+ * missing key says, what a replay miss says, and that a reasoning preamble is
+ * stripped before the JSON parse. Not an actual call, because there is no key
+ * here and asserting against a response nobody has seen would be the unearned
+ * confidence the rest of this repo exists to catch.
+ *
  * This is not a recorded model response and is not presented as one. It is a
  * test double returning a fixed script, chosen so one run has to handle every
  * outcome the loop can produce:
@@ -30,6 +37,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { generatePlan } from './generate';
+import { NEBIUS_MODEL, NebiusLlm, selectLlm, stripReasoning } from './llm';
 import type { Llm, LlmRequest, LlmResponse } from './llm';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -242,6 +250,78 @@ async function main() {
       'the thinly attested item ships, and ships marked unverifiable',
       finalReport.items.find((i) => i.id === 'w5-q1')?.status === 'unverifiable',
       finalReport.items.find((i) => i.id === 'w5-q1')?.status ?? 'missing',
+    ) && ok;
+
+  // The model client, on every path that works without a key. This is all of
+  // them except an actual call: the Nebius client has never been run against
+  // a live endpoint, and pretending otherwise in a test would be the exact
+  // kind of unearned confidence the rest of this repo exists to catch.
+  console.log('');
+  const probe: LlmRequest = {
+    system: 'probe',
+    messages: [{ role: 'user', content: 'probe' }],
+    schema: {},
+    label: 'probe',
+  };
+
+  const previousProvider = process.env.LLM_PROVIDER;
+  delete process.env.LLM_PROVIDER;
+  const fallback = selectLlm();
+  ok =
+    check(
+      'with nothing set, the client is replay and the model is Nemotron',
+      fallback.mode === 'replay' && fallback.model === NEBIUS_MODEL,
+      `${fallback.mode} / ${fallback.model}`,
+    ) && ok;
+
+  let keyError = '';
+  try {
+    await new NebiusLlm().complete(probe);
+  } catch (err) {
+    keyError = err instanceof Error ? err.message : String(err);
+  }
+  ok =
+    check(
+      'a live Nebius call with no key names the variable it wants',
+      keyError.includes('NEBIUS_API_KEY'),
+      keyError || 'no error thrown',
+    ) && ok;
+
+  let missError = '';
+  try {
+    await fallback.complete(probe);
+  } catch (err) {
+    missError = err instanceof Error ? err.message : String(err);
+  }
+  ok =
+    check(
+      'a replay miss names the model it has no recording for',
+      missError.includes(NEBIUS_MODEL),
+      missError.split('\n')[0] || 'no error thrown',
+    ) && ok;
+
+  ok =
+    check(
+      'an inline reasoning block is stripped before the JSON parse',
+      stripReasoning('<think>weighing it up</think>\n{"items":[]}') === '{"items":[]}' &&
+        stripReasoning('{"items":[]}') === '{"items":[]}',
+      JSON.stringify(stripReasoning('<think>x</think> {"items":[]}')),
+    ) && ok;
+
+  process.env.LLM_PROVIDER = 'bogus';
+  let providerError = '';
+  try {
+    selectLlm();
+  } catch (err) {
+    providerError = err instanceof Error ? err.message : String(err);
+  }
+  if (previousProvider === undefined) delete process.env.LLM_PROVIDER;
+  else process.env.LLM_PROVIDER = previousProvider;
+  ok =
+    check(
+      'an unknown LLM_PROVIDER fails loudly rather than falling back',
+      providerError.includes('LLM_PROVIDER'),
+      providerError || 'no error thrown',
     ) && ok;
 
   console.log('');

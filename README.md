@@ -40,6 +40,51 @@ npm run selftest                                  # the loop, with a scripted mo
 npm run generate -- "understand Romans in 6 weeks"
 ```
 
+## Which model
+
+The generator talks to a model through a two-method interface, so which model
+is a wiring decision rather than a rewrite. Three implementations ship:
+
+| `LLM_PROVIDER` | Client | Model |
+| --- | --- | --- |
+| `nebius` (default) | Nebius Token Factory | `nvidia/nemotron-3-super-120b-a12b` |
+| `anthropic` | Anthropic API | `claude-opus-5` |
+| (either) with `LLM_MODE=replay` | recordings on disk | whichever made them |
+
+Replay is the default, and a live call happens only when that provider's
+credentials are actually present. Set `LLM_MODE=live` to force one, and every
+response it gets is written to `fixtures/llm/` keyed by a hash of the model,
+the system prompt, the messages and the schema. So a live run doubles as a
+recording session, and changing one character of a prompt gives an honest
+replay miss rather than a stale answer from the old wording.
+
+The model is part of that key on purpose. A recording made by Claude is never
+served for a request to Nemotron.
+
+```bash
+export NEBIUS_API_KEY=...          # from the Nebius Token Factory console
+LLM_MODE=live npm run generate -- "understand Romans in 6 weeks"
+npm run verify -- out/plan.json && npm run report
+```
+
+`NEBIUS_MODEL` and `NEBIUS_BASE_URL` override the defaults. Nebius publishes
+two spellings of the host, plain and region-qualified; the plain one is the
+default because it is the one that answered.
+
+**The Nebius client has never been run against a live endpoint.** The base URL
+was confirmed to exist, the model id is the one Nebius publishes in its own
+Nemotron sample, and the rest is written from the OpenAI-compatible contract.
+Two places are most likely to need a correction on a first real run, and both
+say so in a comment: whether reasoning arrives in a separate field or as an
+inline `<think>` block, and whether the schema is accepted in the shape sent.
+The self-test covers every path that works without a key and deliberately does
+not fake a response, because asserting against a reply nobody has seen is the
+unearned confidence the rest of this repo exists to catch.
+
+An open-weight model is the more interesting subject anyway. Open models
+misattribute citations more often than frontier ones, so the verifier has more
+to catch and the demo shows more of it working.
+
 ## Why the index is built from scratch
 
 An earlier prototype of this checked plans against a structured index that
