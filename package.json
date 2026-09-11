@@ -1,0 +1,24 @@
+{
+  "name": "chapter-and-verse",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Checks an LLM-generated scripture study plan against a public-domain Bible index, and reports every claim it cannot confirm.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "fetch": "bash scripts/fetch-sources.sh",
+    "build": "npm run fetch && npm run build-index",
+    "build-index": "vite-node src/build-index.ts",
+    "verify": "vite-node src/verify-cli.ts",
+    "generate": "vite-node src/generate-cli.ts",
+    "report": "vite-node src/report.ts",
+    "selftest": "vite-node src/selftest.ts",
+    "audit": "vite-node src/verify-cli.ts fixtures/plan-that-slips-through.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vite-node": "^2.1.4"
+  }
+}

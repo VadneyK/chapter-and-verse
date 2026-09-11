@@ -1,0 +1,93 @@
+{
+  "goal": "understand Romans in 6 weeks (adversarial: nearly every claim below is false, and each note says which check is supposed to catch it)",
+  "weeks": 6,
+  "generatedBy": "hand-authored adversarial fixture, not a generator",
+  "items": [
+    {
+      "id": "adv-verse-out-of-range",
+      "type": "memory",
+      "week": 1,
+      "title": "A verse that does not exist",
+      "reference": "Romans 8:999",
+      "note": "Romans 8 has 39 verses. This is the check the first version of this project could not make at all, because the index it used carried chapter counts and no verse counts. Rebuilding the index from the text closed it."
+    },
+    {
+      "id": "adv-verse-range-off-end",
+      "type": "memory",
+      "week": 1,
+      "title": "A verse range running off the end of the chapter",
+      "reference": "Romans 3:23-400",
+      "note": "Romans 3 has 31 verses. Both ends of a range are bounded, so the 23 passing does not carry the 400."
+    },
+    {
+      "id": "adv-chapter-out-of-range",
+      "type": "reading",
+      "week": 2,
+      "title": "A chapter past the end of the book",
+      "reference": "Romans 17",
+      "note": "Romans has 16 chapters."
+    },
+    {
+      "id": "adv-quote-misattributed",
+      "type": "memory",
+      "week": 3,
+      "title": "A real verse, attributed to the wrong reference",
+      "reference": "Romans 8:28",
+      "quote": "For God so loved the world that He gave His one and only Son, that everyone who believes in Him shall not perish but have eternal life.",
+      "note": "That is John 3:16, word for word. Misattributing Scripture is a named guardrail, and it is the failure a plain reference check cannot see: the reference is real, the quote is real, and the pairing is false."
+    },
+    {
+      "id": "adv-quote-other-translation",
+      "type": "memory",
+      "week": 3,
+      "title": "The right verse, in a translation the index was not built from",
+      "reference": "Romans 8:28",
+      "quote": "And we know that for those who love God all things work together for good, for those who are called according to his purpose.",
+      "note": "That is the ESV wording of the correct verse. The check holds every quote to the translation named in the index, so this fails, and the detail says so instead of implying the quote is wrong."
+    },
+    {
+      "id": "adv-crossref-invented",
+      "type": "question",
+      "week": 4,
+      "title": "A connection between two real passages that nothing attests",
+      "reference": "Romans 12",
+      "crossReferences": ["Leviticus 11"],
+      "note": "Both passages exist. No cross reference in the source links them. An invented connection between two real things is the most plausible-sounding kind of error a model makes."
+    },
+    {
+      "id": "adv-crossref-weak",
+      "type": "question",
+      "week": 4,
+      "title": "A real connection, too thinly attested to call verified",
+      "reference": "Romans 12:3",
+      "crossReferences": ["Titus 2:6"],
+      "note": "The source attests this link at 2 votes, under the threshold of 5. It reports as unverifiable, not as a pass and not as a failure. Calling it verified would be the same overclaim this project exists to catch."
+    },
+    {
+      "id": "adv-single-chapter-trap",
+      "type": "reading",
+      "week": 5,
+      "title": "Control: a correct citation of a one-chapter book",
+      "reference": "Jude 3",
+      "note": "Jude has one chapter and 25 verses, so the bare 3 is a verse. A parser that reads it as a chapter fails this, and would fail every correct citation of Obadiah, Philemon, 2 John, 3 John and Jude. Must pass."
+    },
+    {
+      "id": "adv-title-lie",
+      "type": "reading",
+      "week": 5,
+      "title": "Romans 9 is where Paul describes his shipwreck on Malta",
+      "reference": "Romans 9",
+      "note": "Every structured field on this item is true, so it passes. The false claim is in the title, which nothing reads. This is the honest limit of the approach, and the report says so on every item rather than leaving a reader to assume otherwise."
+    },
+    {
+      "id": "adv-control-clean",
+      "type": "memory",
+      "week": 6,
+      "title": "Control: every claim true",
+      "reference": "Romans 8:28",
+      "quote": "And we know that God works all things together for the good of those who love Him, who are called according to His purpose.",
+      "crossReferences": ["1 Peter 5:10"],
+      "note": "Real reference, verbatim quote, and a cross reference the source attests at 573 votes. Must pass. If this one ever fails, a tightening went too far."
+    }
+  ]
+}
