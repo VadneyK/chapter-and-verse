@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # The index is built from the two files committed under sources/, so this
+      # job needs no network and no API key. If this step ever starts failing,
+      # the sources and the book table in src/books.ts have drifted apart, which
+      # is exactly the failure the strict build is there to make loud.
+      - name: Build the index
+        run: npm run build-index
+
+      # Proves the generate, verify, repair loop against a scripted stand-in
+      # model. Fifteen assertions, no credentials.
+      - name: Self-test
+        run: npm run selftest
+
+      # The adversarial fixture. Seven of its ten items make a false claim, so
+      # this asserts on the shape of the result rather than on an exit code:
+      # six failures, one unverifiable, three passes. If a tightening ever makes
+      # a control fail, or a loosening lets a lie through, this catches it.
+      - name: Adversarial fixture
+        run: |
+          npm run verify -- fixtures/plan-that-slips-through.json | tee /tmp/out.txt
+          tail -n 20 /tmp/out.txt | grep -q '6 failed' \
+            || { echo "::error::expected 6 failures on the adversarial fixture"; exit 1; }
+          tail -n 20 /tmp/out.txt | grep -q '3 passed' \
+            || { echo "::error::expected 3 passes on the adversarial fixture"; exit 1; }
+          tail -n 20 /tmp/out.txt | grep -q '1 with claims that cannot be checked' \
+            || { echo "::error::expected 1 unverifiable item"; exit 1; }

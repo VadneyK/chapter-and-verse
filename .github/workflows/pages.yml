@@ -1,0 +1,57 @@
+name: Demo page
+
+# Builds the index from the committed public-domain sources, runs the verifier
+# over the adversarial fixture, renders the report, and publishes it.
+#
+# The deploy is the demo, and the build is the proof: the page you are looking
+# at was produced by the same three commands the README gives you, from the same
+# two data files in this repository, with no API key and no network.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run build-index
+      - run: npm run verify -- fixtures/plan-that-slips-through.json
+      - run: npm run report
+
+      - name: Assemble the site
+        run: |
+          mkdir -p site
+          cp out/report.html site/index.html
+          cp out/verify-report.json site/verify-report.json
+          cp fixtures/plan-that-slips-through.json site/plan.json
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
