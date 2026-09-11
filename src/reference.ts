@@ -80,6 +80,33 @@ function matchBook(index: BuiltIndex, s: string): { book: IndexBook; rest: strin
   return null;
 }
 
+/**
+ * Finds a book named anywhere inside a sentence, for goals like "understand
+ * Romans in 6 weeks" where the book sits in the middle of prose.
+ *
+ * Only spellings of four characters or more, plus the three-letter display
+ * name Job, are considered. Short abbreviations are fine in a reference, where
+ * the string is nothing but a reference, and dangerous in prose: "am" is a
+ * valid abbreviation for Amos and also sits in the middle of half the English
+ * sentences anyone would write. Longest match wins, so "1 John" beats "John"
+ * and "Romans" beats a stray "song".
+ */
+export function findBookInProse(index: BuiltIndex, text: string): IndexBook | null {
+  const s = ` ${normalizeRef(text)} `;
+  let best: { book: IndexBook; length: number } | null = null;
+  for (const [alias, book] of aliasEntries(index)) {
+    if (alias.length < 4 && alias !== 'job') continue;
+    if (!s.includes(` ${alias} `) && !s.includes(` ${alias}`)) continue;
+    // Word boundary on both sides: the alias must be preceded by a space and
+    // followed by a space, a digit, or punctuation, never by another letter.
+    const at = s.indexOf(` ${alias}`);
+    const after = s.charAt(at + alias.length + 1);
+    if (/[a-z]/.test(after)) continue;
+    if (!best || alias.length > best.length) best = { book, length: alias.length };
+  }
+  return best?.book ?? null;
+}
+
 export function parseReference(index: BuiltIndex, raw: string): ParseResult {
   const s = normalizeRef(raw);
   if (!s) return { ok: false, reason: 'the reference is empty' };
