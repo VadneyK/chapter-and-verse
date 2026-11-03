@@ -16,6 +16,7 @@
     "audit": "vite-node src/verify-cli.ts fixtures/plan-that-slips-through.json",
     "reading": "vite-node src/reading-cli.ts",
     "daily": "vite-node src/reading-cli.ts today",
+    "test": "vite-node src/schedule-test.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

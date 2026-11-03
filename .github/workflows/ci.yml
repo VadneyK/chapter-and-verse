@@ -34,6 +34,12 @@ jobs:
       - name: Self-test
         run: npm run selftest
 
+      # The review scheduler and the one-verse-a-day plan. Pure arithmetic
+      # over the built index, so it runs after the index and needs nothing
+      # else. Writes only to a temporary directory.
+      - name: Scheduler tests
+        run: npm test
+
       # The adversarial fixture. Seven of its ten items make a false claim, so
       # this asserts on the shape of the result rather than on an exit code:
       # six failures, one unverifiable, three passes. If a tightening ever makes
