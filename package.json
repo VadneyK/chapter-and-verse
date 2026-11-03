@@ -14,6 +14,8 @@
     "report": "vite-node src/report.ts",
     "selftest": "vite-node src/selftest.ts",
     "audit": "vite-node src/verify-cli.ts fixtures/plan-that-slips-through.json",
+    "reading": "vite-node src/reading-cli.ts",
+    "daily": "vite-node src/reading-cli.ts today",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
