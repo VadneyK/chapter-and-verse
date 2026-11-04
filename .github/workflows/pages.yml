@@ -38,7 +38,7 @@ jobs:
       - run: npm run report
         env:
           FEEDBACK_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSc_3ztRXdPM8C7e8GCb43oO_2RcmQSij2pKcIkUSaSxtUhPfA/viewform'
-          HELP_CONTACT: ''
+          HELP_CONTACT: 'https://docs.google.com/forms/d/e/1FAIpQLSc_3ztRXdPM8C7e8GCb43oO_2RcmQSij2pKcIkUSaSxtUhPfA/viewform'
 
       - name: Assemble the site
         run: |

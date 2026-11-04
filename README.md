@@ -15,9 +15,10 @@ against the text one at a time, which is not what a demo does.
 That check is the whole project. The generator is a few hundred lines. The
 interesting part is what happens after it produces something.
 
-It is free to use, copy and change (MIT). There is no account, and nothing you
-add is sent anywhere: your verse deck and reading plan stay in one file on your
-own computer.
+It is free to use, copy and change (MIT). There is no account. Verifying, the
+report, the verse deck and the daily plan run offline, and the deck and plan
+stay in one file on your own computer. Writing a new plan is the one step that
+goes online: it sends your request to the model provider you configure.
 
 ## Who it is for
 
@@ -366,7 +367,8 @@ Three questions, a minute or two:
 Answer here: [the feedback form](https://docs.google.com/forms/d/e/1FAIpQLSc_3ztRXdPM8C7e8GCb43oO_2RcmQSij2pKcIkUSaSxtUhPfA/viewform) (one form for all of these Bible
 tools; the first question asks which one), or open an issue on this repository.
 
-If you want help memorizing or studying, reach out: <!-- HELP_CONTACT -->(contact coming soon).
+If you want help memorizing or studying, reach out through [the same form](https://docs.google.com/forms/d/e/1FAIpQLSc_3ztRXdPM8C7e8GCb43oO_2RcmQSij2pKcIkUSaSxtUhPfA/viewform);
+it asks whether you would like help and leaves room for how to reach you.
 
 ## License
 
