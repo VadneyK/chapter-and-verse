@@ -42,7 +42,7 @@ jobs:
           cp out/verify-report.json site/verify-report.json
           cp fixtures/plan-that-slips-through.json site/plan.json
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
