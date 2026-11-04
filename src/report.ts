@@ -28,6 +28,32 @@ const OUT = path.join(ROOT, 'out');
 /** Longest stretch of verse text shown inline before it is cut. */
 const MAX_TEXT_CHARS = 900;
 
+/**
+ * Where readers can say what helped and who they can ask for help. Both come
+ * from the environment so the published page shows nothing until a real link
+ * exists: an empty value hides that line rather than printing a dead one.
+ */
+const FEEDBACK_URL = (process.env.FEEDBACK_URL ?? '').trim();
+const HELP_CONTACT = (process.env.HELP_CONTACT ?? '').trim();
+
+function contactHref(contact: string): string {
+  if (/^(https?:|mailto:)/i.test(contact)) return contact;
+  return contact.includes('@') ? `mailto:${contact}` : contact;
+}
+
+function feedbackBlock(): string {
+  if (!FEEDBACK_URL && !HELP_CONTACT) return '';
+  const ask = FEEDBACK_URL
+    ? `<p><strong>Tell us what helped.</strong> What helped, what did not work or was
+    confusing, and what would you want it to do? <a href="${esc(FEEDBACK_URL)}">Answer three
+    short questions</a>.</p>`
+    : '';
+  const help = HELP_CONTACT
+    ? `<p>If you want help memorizing or studying, <a href="${esc(contactHref(HELP_CONTACT))}">reach out</a>.</p>`
+    : '';
+  return `<div class="limit feedback">${ask}${help}</div>`;
+}
+
 function esc(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -256,6 +282,19 @@ function page(index: BuiltIndex, report: VerifyReport, plan: StudyPlan | null): 
   .limit p { margin: 0; font-size: .89rem; }
   .limit p + p { margin-top: .6rem; }
 
+  .about { margin: 1.25rem 0 0; font-size: .92rem; }
+  .about p { margin: 0; }
+  .about p + p { margin-top: .5rem; color: var(--muted); }
+  a { color: var(--accent); }
+  .feedback { border-left-color: var(--pass); }
+
+  @media (max-width: 36rem) {
+    .wrap { padding-top: 2rem; }
+    summary { grid-template-columns: 1fr auto; gap: .25rem .75rem; }
+    .item__status { grid-column: 1 / -1; }
+    .item__ref { white-space: normal; text-align: right; }
+  }
+
   footer { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--line);
            color: var(--muted); font-size: .82rem; }
   footer ul { margin: .6rem 0 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .4rem; }
@@ -272,6 +311,16 @@ function page(index: BuiltIndex, report: VerifyReport, plan: StudyPlan | null): 
       &middot; ${esc(report.verifiedAt.replace('T', ' ').slice(0, 16))} UTC
     </p>
   </header>
+
+  <div class="about">
+    <p><strong>What this page is.</strong> A sample report from
+    <a href="https://github.com/VadneyK/chapter-and-verse">chapter-and-verse</a>, a free tool
+    that checks the scripture claims in a study plan against the Berean Standard Bible:
+    does the verse exist, does the chapter go that far, and are the quoted words really
+    at that reference. This plan was written to slip lies past a checker, so most of it fails on
+    purpose. Open any item to see the claim beside the text it was checked against.</p>
+    <p>It checks references and quotes, not meaning or doctrine.</p>
+  </div>
 
   <div class="tally">
     <div class="tally__cell"><span class="tally__n">${total}</span><span class="tally__k">items checked</span></div>
@@ -292,6 +341,8 @@ function page(index: BuiltIndex, report: VerifyReport, plan: StudyPlan | null): 
     <p>"Cannot be confirmed" is its own outcome and never rounds up to verified. A cross
     reference the source attests weakly is real and is reported as weak.</p>
   </div>
+
+  ${feedbackBlock()}
 
   <footer>
     Built from two outside sources and nothing else. Both are quoted in full, with the date

@@ -15,6 +15,41 @@ against the text one at a time, which is not what a demo does.
 That check is the whole project. The generator is a few hundred lines. The
 interesting part is what happens after it produces something.
 
+It is free to use, copy and change (MIT). There is no account, and nothing you
+add is sent anywhere: your verse deck and reading plan stay in one file on your
+own computer.
+
+## Who it is for
+
+- **Bible study leaders who draft with AI** and want to know, before a plan
+  goes to a group, which references exist and which quotes really say what the
+  plan says they say.
+- **People who build AI Bible tools** and want a check they can run on every
+  answer, with the data to do it already licensed for redistribution.
+- **Anyone memorizing verses** who is happy at a terminal: a review deck that
+  schedules each verse and a one-verse-a-day plan through any book (see
+  [Daily reading and review](#daily-reading-and-review)).
+
+You need Node.js and a terminal. The web page at
+https://vadneyk.github.io/chapter-and-verse/ is a sample report, not an app.
+
+## What it does not do
+
+- **It does not judge meaning, doctrine or interpretation.** "Verified" means
+  the reference exists and the quoted words are in the Berean Standard Bible
+  at that place. Whether a plan teaches a passage well is a question for your
+  pastor, your teachers and your own reading, not for this tool.
+- **It does not read titles or notes.** Free text is never checked, and every
+  report says so on every item (see [What it does not check](#what-it-does-not-check)).
+- **It knows one translation.** Quotes are checked against the BSB only. A
+  correct quote from another translation shows as "not found in this
+  translation", which is not the same as wrong.
+- **It does not write plans for free.** Verifying, the report, the review deck
+  and the daily plan all run offline at no cost. Writing a new plan calls a
+  model and needs your own API key, which the provider may charge for.
+- **It is not a substitute for reading the Bible itself,** or for a church and
+  people who will read it with you.
+
 ## Quick start
 
 ```bash
@@ -318,6 +353,20 @@ directly" guard never fires and every import of the library re-runs the demo.
 Both documents say plainly which sections cannot be written yet and why, rather than
 filling them with plausible text. That is the same standard the verifier holds a study
 plan to.
+
+## Tell us what helped
+
+This is a small project, and it gets better when people say how it went.
+Three questions, a minute or two:
+
+1. What helped?
+2. What did not work, or was confusing?
+3. What would you want it to do?
+
+Answer here: <!-- FEEDBACK_URL -->(feedback form, link coming soon), or open an
+issue on this repository.
+
+If you want help memorizing or studying, reach out: <!-- HELP_CONTACT -->(contact coming soon).
 
 ## License
 
