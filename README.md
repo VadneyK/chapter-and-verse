@@ -218,6 +218,54 @@ one catches the out-of-range verse, the invented cross reference and the
 misattributed quote, that the unverifiable item never appears in the repair
 prompt, and that the item which never verifies is dropped rather than shipped.
 
+## Daily reading and review
+
+Two small tools for actually reading and keeping scripture, built on the same
+index and the same reference parser as the verifier. Both live in one JSON
+file, `out/reading.json` by default, or wherever `READING_STATE_FILE` points.
+Nothing here needs a model or a network.
+
+### A review deck for memorised verses
+
+An SM-2 scheduler, the algorithm Anki descends from. Add a verse, recite it
+when it comes up, grade the recall from 0 to 5, and the next review is
+scheduled: one day, then six, then the previous interval times the card's
+ease. A grade under 3 is a lapse and sends the card back to the start.
+
+```bash
+npm run reading -- add "Romans 8:28"       # due today
+npm run reading -- due                     # what is due, with the text to check against
+npm run reading -- grade "Romans 8:28" 4   # 5 perfect, 4 hesitated, 3 hard, 2 and under wrong
+npm run reading -- list                    # the whole deck and when each card is next due
+```
+
+A reference goes through the verifier before it becomes a card, so
+`Romans 8:999` is refused with the same sentence a study plan would get, and
+`rom 8.28`, `Romans 8:28` and `Jude 1:3` land on the canonical card.
+
+### One verse a day
+
+A plan is a passage and a start date. Today's verse is arithmetic over the
+index, so a missed morning does not stall the plan and running the brief twice
+gives the same verse twice. Day 1 is the start date; `Romans` takes 433 days.
+
+```bash
+npm run reading -- start Romans            # or "Psalm 23", or "Romans 8:28-39"
+npm run daily                              # today's verse
+npm run reading -- brief --json            # today's verse and the due list, for a script
+```
+
+For a morning brief that runs from code, `todaysVerse()` in `src/daily.ts`
+reads the index and the plan off disk and returns a plain object: `status`
+is `reading`, `not-started`, `finished` or `no-plan`, and a reading carries
+`reference`, `text`, `day` and `of`. Every command takes `--json`, and
+`--date YYYY-MM-DD` runs it as if it were another day.
+
+`npm test` covers the scheduler and the plan: the SM-2 ladder and its floor,
+lapses, the ordering of the due list, calendar arithmetic across month ends
+and leap years, and the walk through Romans landing on `Romans 2:1` on day 33
+and finishing on `Romans 16:27`.
+
 ## Data
 
 Two sources, and nothing else. Both are quoted verbatim with the URL and the
@@ -246,6 +294,11 @@ src/llm.ts           model client, replay by default, recording in live mode
 src/generate.ts      the generate, verify, repair loop
 src/report.ts        renders a self-contained HTML report
 src/selftest.ts      the loop against a scripted model, no key needed
+src/schedule.ts      SM-2 review scheduler for memorised verses
+src/daily.ts         one verse a day through a passage; todaysVerse() for a brief
+src/reading-store.ts the reading state file and calendar arithmetic
+src/reading-cli.ts   add, due, grade, start, today, brief
+src/schedule-test.ts tests for the scheduler and the daily plan, npm test
 ```
 
 The CLIs are separate files from the libraries they wrap. Under vite-node,
