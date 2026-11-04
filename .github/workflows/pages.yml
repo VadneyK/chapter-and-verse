@@ -37,7 +37,7 @@ jobs:
       # page, so nothing dead is ever published; fill both in to show them.
       - run: npm run report
         env:
-          FEEDBACK_URL: ''
+          FEEDBACK_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSc_3ztRXdPM8C7e8GCb43oO_2RcmQSij2pKcIkUSaSxtUhPfA/viewform'
           HELP_CONTACT: ''
 
       - name: Assemble the site

@@ -363,8 +363,8 @@ Three questions, a minute or two:
 2. What did not work, or was confusing?
 3. What would you want it to do?
 
-Answer here: <!-- FEEDBACK_URL -->(feedback form, link coming soon), or open an
-issue on this repository.
+Answer here: [the feedback form](https://docs.google.com/forms/d/e/1FAIpQLSc_3ztRXdPM8C7e8GCb43oO_2RcmQSij2pKcIkUSaSxtUhPfA/viewform) (one form for all of these Bible
+tools; the first question asks which one), or open an issue on this repository.
 
 If you want help memorizing or studying, reach out: <!-- HELP_CONTACT -->(contact coming soon).
 
