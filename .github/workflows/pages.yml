@@ -33,7 +33,12 @@ jobs:
       - run: npm ci
       - run: npm run build-index
       - run: npm run verify -- fixtures/plan-that-slips-through.json
+      # The feedback form and the help contact. Empty hides that line on the
+      # page, so nothing dead is ever published; fill both in to show them.
       - run: npm run report
+        env:
+          FEEDBACK_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSc_3ztRXdPM8C7e8GCb43oO_2RcmQSij2pKcIkUSaSxtUhPfA/viewform'
+          HELP_CONTACT: ''
 
       - name: Assemble the site
         run: |
