@@ -39,6 +39,9 @@ jobs:
         env:
           FEEDBACK_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSc_3ztRXdPM8C7e8GCb43oO_2RcmQSij2pKcIkUSaSxtUhPfA/viewform'
           HELP_CONTACT: 'https://docs.google.com/forms/d/e/1FAIpQLSc_3ztRXdPM8C7e8GCb43oO_2RcmQSij2pKcIkUSaSxtUhPfA/viewform'
+          # Turns on the title, description, canonical, share card and structured data
+          # that only make sense on the published page.
+          SITE_URL: 'https://vadneyk.github.io/chapter-and-verse/'
 
       - name: Assemble the site
         run: |
@@ -46,6 +49,15 @@ jobs:
           cp out/report.html site/index.html
           cp out/verify-report.json site/verify-report.json
           cp fixtures/plan-that-slips-through.json site/plan.json
+          # sitemap.xml, llms.txt and the share image
+          cp web/* site/
+
+      # The page must pass the search and AI-answer checks before it is published.
+      - name: Check the assembled page
+        run: |
+          python3 -m http.server 8765 -d site >/dev/null 2>&1 &
+          sleep 1
+          python3 scripts/check_seo.py http://127.0.0.1:8765/ --live-base https://vadneyk.github.io/chapter-and-verse/
 
       - uses: actions/upload-pages-artifact@v3
         with:

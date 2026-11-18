@@ -1,0 +1,21 @@
+# chapter-and-verse
+
+> A free, open-source tool (MIT) with two parts: an agent that writes a scripture study plan, and a verifier that checks every factual claim in the plan against the Bible text before anything is shown to anyone. It checks whether a verse exists, whether the chapter goes that far, and whether quoted words are really at that reference. It checks references and quotes, not meaning or doctrine.
+
+The demo page is a sample report. The plan in it was written to slip false claims past a checker, so most of its ten items fail on purpose. The check is done against the Berean Standard Bible, a public-domain text. Verifying, the report, the verse deck and the daily reading plan run offline with no account. Writing a new plan is the one step that goes online: it sends the request to the model provider the user configures. Made by Kentaro Vadney.
+
+## Pages
+
+- [Sample verification report](https://vadneyk.github.io/chapter-and-verse/): the claim beside the text it was checked against, for each item
+- [The report as JSON](https://vadneyk.github.io/chapter-and-verse/verify-report.json): the same result as data
+- [The plan that was checked](https://vadneyk.github.io/chapter-and-verse/plan.json): the adversarial study plan
+
+## Source and docs
+
+- [README](https://github.com/VadneyK/chapter-and-verse#readme): what it does, who it is for, how to run it
+- [Data licenses](https://github.com/VadneyK/chapter-and-verse/blob/main/DATA-LICENSES.md): the two outside sources, quoted in full with the date read
+- [Source code](https://github.com/VadneyK/chapter-and-verse): TypeScript, MIT license
+
+## Optional
+
+- [About the author](https://vadneyk.github.io/portfolio/): Kentaro Vadney's projects page
