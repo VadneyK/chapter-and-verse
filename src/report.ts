@@ -35,6 +35,59 @@ const MAX_TEXT_CHARS = 900;
  */
 const FEEDBACK_URL = (process.env.FEEDBACK_URL ?? '').trim();
 const HELP_CONTACT = (process.env.HELP_CONTACT ?? '').trim();
+// Set only when the report is published as the demo page. It adds what search engines and
+// AI answer engines read (title, description, canonical, share card, structured data). A
+// report someone renders for themselves stays a plain local file with none of it.
+const SITE_URL = (process.env.SITE_URL ?? '').trim().replace(/\/?$/, '/').replace(/^\/$/, '');
+const SITE_TITLE = 'chapter-and-verse: a sample verification report';
+const SITE_DESCRIPTION =
+  'A sample report from chapter-and-verse, a free tool that checks the scripture claims in a study plan ' +
+  'against the Berean Standard Bible. This plan was written to fail, so most of it does.';
+
+function siteHead(): string {
+  if (!SITE_URL) return '<title>Verification report</title>';
+  const author = {
+    '@type': 'Person',
+    '@id': 'https://vadneyk.github.io/portfolio/#kentaro',
+    name: 'Kentaro Vadney',
+    url: 'https://vadneyk.github.io/portfolio/',
+  };
+  const ld = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': SITE_URL,
+    url: SITE_URL,
+    name: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    inLanguage: 'en',
+    author,
+    about: {
+      '@type': 'SoftwareSourceCode',
+      name: 'chapter-and-verse',
+      description:
+        'Checks an LLM-generated scripture study plan against a public-domain Bible index, and reports every claim it cannot confirm.',
+      codeRepository: 'https://github.com/VadneyK/chapter-and-verse',
+      programmingLanguage: 'TypeScript',
+      license: 'https://opensource.org/license/mit',
+      isAccessibleForFree: true,
+      author,
+    },
+  };
+  return `<title>${esc(SITE_TITLE)}</title>
+<meta name="description" content="${esc(SITE_DESCRIPTION)}">
+<link rel="canonical" href="${esc(SITE_URL)}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="chapter-and-verse">
+<meta property="og:title" content="${esc(SITE_TITLE)}">
+<meta property="og:description" content="${esc(SITE_DESCRIPTION)}">
+<meta property="og:url" content="${esc(SITE_URL)}">
+<meta property="og:image" content="${esc(SITE_URL)}og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The chapter-and-verse sample report: ten items checked, most failing on purpose">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`;
+}
 
 function contactHref(contact: string): string {
   if (/^(https?:|mailto:)/i.test(contact)) return contact;
@@ -166,7 +219,7 @@ function page(index: BuiltIndex, report: VerifyReport, plan: StudyPlan | null): 
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Verification report</title>
+${siteHead()}
 <style>
   :root {
     --ground: #fbfbfc;
